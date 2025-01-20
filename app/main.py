@@ -93,7 +93,7 @@ def hired_employees_by_quarter(db: Session = Depends(get_db)):
         for row in result
     ]
 
-    return {"Result data": data}
+    return {"Results data": data}
 
 
 @app.get("/departments/above-average")
@@ -145,4 +145,4 @@ def departments_above_average(db: Session = Depends(get_db)):
         for row in result
     ]
 
-    return {"data": data}
+    return {"Results data": data}
