@@ -17,8 +17,12 @@ async def send_csv(
         employees_file: UploadFile = File(...),
         db: Session = Depends(get_db)):
 
-    #if not jobs_file.filename.endswith(".csv"):
-    #    raise HTTPException(status_code=400, detail="La extesión del archivo debe ser CSV sí o sí")
+    if not jobs_file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="La extesión del archivo debe ser CSV obligatoriamente")
+    if not departments_file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="La extesión del archivo debe ser CSV obligatoriamente")
+    if not employees_file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="La extesión del archivo debe ser CSV oblogatoriamente")
 
     # Leer el archivo CSV en un DataFrame de pandas
     # Leer los archivos CSV
