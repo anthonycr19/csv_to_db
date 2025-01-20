@@ -94,3 +94,55 @@ def hired_employees_by_quarter(db: Session = Depends(get_db)):
     ]
 
     return {"Result data": data}
+
+
+@app.get("/departments/above-average")
+def departments_above_average(db: Session = Depends(get_db)):
+    query = text("""
+    WITH department_hires AS (
+        SELECT 
+            d.id AS department_id,
+            d.name AS department_name,
+            COUNT(he.id) AS hired_count
+        FROM 
+            hired_employees he
+        JOIN 
+            departments d ON he.department_id = d.id
+        WHERE 
+            EXTRACT(YEAR FROM he.datetime) = 2021
+        GROUP BY 
+            d.id, d.name
+    ),
+    average_hires AS (
+        SELECT 
+            AVG(hired_count) AS avg_hires
+        FROM 
+            department_hires
+    )
+    SELECT 
+        dh.department_id,
+        dh.department_name,
+        dh.hired_count
+    FROM 
+        department_hires dh
+    CROSS JOIN 
+        average_hires ah
+    WHERE 
+        dh.hired_count > ah.avg_hires
+    ORDER BY 
+        dh.hired_count DESC;
+    """)
+
+    result = db.execute(query).fetchall()
+
+    # Convertir ahora el resultado en una lista de diccionarios
+    data = [
+        {
+            "department_id": row[0],
+            "department_name": row[1],
+            "hired_count": row[2],
+        }
+        for row in result
+    ]
+
+    return {"data": data}
