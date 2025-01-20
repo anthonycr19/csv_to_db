@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, Depends, HTTPException, File
 from sqlalchemy.orm import Session, mapper
 from . import models
 from datetime import datetime
+from sqlalchemy.sql import text
 
 from app.database import Base, engine, get_db
 import pandas as pd
@@ -56,3 +57,40 @@ async def send_csv(
         raise HTTPException(status_code=500, detail=f"Error al insertar los datos en la base de datos: {e}")
 
     return {"message": "Los datos han sido guardados correctamente en la BD"}
+
+
+@app.get("/employees/hired-per-quarter")
+def hired_employees_by_quarter(db: Session = Depends(get_db)):
+    query = text("""
+    SELECT 
+        d.name AS department_name,
+        j.job_title,
+        EXTRACT(QUARTER FROM he.datetime) AS quarter,
+        COUNT(he.id) AS hired_count
+    FROM 
+        hired_employees he
+    JOIN 
+        jobs j ON he.job_id = j.id
+    JOIN 
+        departments d ON he.department_id = d.id
+    WHERE 
+        EXTRACT(YEAR FROM he.datetime) = 2021
+    GROUP BY 
+        d.name, j.job_title, EXTRACT(QUARTER FROM he.datetime)
+    ORDER BY 
+        d.name, j.job_title, quarter;
+    """)
+    result = db.execute(query).fetchall()
+
+    # Convertir el resultado en una lista de diccionarios
+    data = [
+        {
+            "department_name": row[0],
+            "job_title": row[1],
+            "quarter": int(row[2]),
+            "hired_count": row[3],
+        }
+        for row in result
+    ]
+
+    return {"Result data": data}
